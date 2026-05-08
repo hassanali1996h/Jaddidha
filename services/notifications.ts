@@ -1,0 +1,178 @@
+// =============================================
+// Jaddidha - Push Notifications Service
+// =============================================
+import { Platform } from 'react-native';
+import { getSupabaseClient } from '@/template';
+
+const supabase = getSupabaseClient();
+
+// Lazy-load expo-notifications to avoid crashes if plugin not configured
+let Notifications: any = null;
+let Device: any = null;
+
+try {
+  Notifications = require('expo-notifications');
+  Device = require('expo-device');
+  // Configure how notifications appear when app is in foreground
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+} catch (e) {
+  console.warn('expo-notifications not available:', e);
+}
+
+export interface NotificationRecord {
+  id?: string;
+  title: string;
+  body: string;
+  schedule_at?: string | null;
+  sent_at?: string | null;
+  type?: string;
+  is_active?: boolean;
+  created_at?: string;
+}
+
+// ============================
+// PERMISSIONS
+// ============================
+export async function requestNotificationPermission(): Promise<boolean> {
+  try {
+    if (!Notifications || !Device) return false;
+    if (!Device.isDevice) return false;
+
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== 'granted') return false;
+
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('jaddidha', {
+        name: 'جددها - إشعارات',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#D4AF37',
+        sound: 'default',
+      });
+    }
+
+    return true;
+  } catch (e) {
+    console.warn('requestNotificationPermission error:', e);
+    return false;
+  }
+}
+
+// ============================
+// SEND IMMEDIATE NOTIFICATION
+// ============================
+export async function sendLocalNotification(title: string, body: string): Promise<string | null> {
+  try {
+    if (!Notifications) return null;
+    const id = await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        sound: 'default',
+        data: { type: 'local' },
+      },
+      trigger: null,
+    });
+    return id;
+  } catch (e) {
+    console.error('sendLocalNotification error:', e);
+    return null;
+  }
+}
+
+// ============================
+// SCHEDULE NOTIFICATION
+// ============================
+export async function scheduleNotification(
+  title: string,
+  body: string,
+  scheduleAt: Date
+): Promise<string | null> {
+  try {
+    if (!Notifications) return null;
+    const secondsFromNow = Math.max(1, Math.floor((scheduleAt.getTime() - Date.now()) / 1000));
+    const id = await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        sound: 'default',
+        data: { type: 'scheduled' },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes
+          ? Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL
+          : 'timeInterval',
+        seconds: secondsFromNow,
+        repeats: false,
+      },
+    });
+    return id;
+  } catch (e) {
+    console.error('scheduleNotification error:', e);
+    return null;
+  }
+}
+
+// ============================
+// CANCEL ALL SCHEDULED
+// ============================
+export async function cancelAllNotifications(): Promise<void> {
+  try {
+    if (!Notifications) return;
+    await Notifications.cancelAllScheduledNotificationsAsync();
+  } catch (e) {
+    console.warn('cancelAllNotifications error:', e);
+  }
+}
+
+// ============================
+// DATABASE OPERATIONS
+// ============================
+export async function fetchNotifications(): Promise<NotificationRecord[]> {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function createNotification(notif: Omit<NotificationRecord, 'id' | 'created_at'>) {
+  const { data, error } = await supabase
+    .from('notifications')
+    .insert(notif)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteNotification(id: string) {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_active: false })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function markNotificationSent(id: string) {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ sent_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+}

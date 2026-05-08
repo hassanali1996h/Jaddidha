@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "جددها - قطع غيار أكتروس",
+    "slug": "jaddidha-actros",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/logo.png",
+    "scheme": "jaddidha",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jaddidha.actros",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "نحتاج الكاميرا لتصوير قطع الغيار وإرسال طلبات القطع",
+        "NSPhotoLibraryUsageDescription": "نحتاج الوصول للصور لرفع صور قطع الغيار",
+        "LSApplicationQueriesSchemes": ["whatsapp"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/logo.png",
+        "backgroundColor": "#000000"
+      },
+      "package": "com.jaddidha.app",
+      "versionCode": 1,
+      "edgeToEdgeEnabled": true,
+      "queries": [
+        { "package": "com.whatsapp" },
+        { "package": "com.whatsapp.w4b" }
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/logo.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash.png",
+          "imageWidth": 300,
+          "resizeMode": "contain",
+          "backgroundColor": "#000000"
+        }
+      ],
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/logo.png",
+          "color": "#D4AF37",
+          "sounds": []
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
