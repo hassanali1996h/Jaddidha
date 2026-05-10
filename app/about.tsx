@@ -347,10 +347,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.darkBorderLight,
     padding: 16,
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'flex-start',
     gap: 12,
-    flexDirection: 'row-reverse',
   },
   valueIconWrap: {
     width: 46,
@@ -377,6 +376,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     flex: 1,
   },
+  valueTextWrap: { flex: 1, alignItems: 'flex-end', gap: 4 },
 
   // CONTACT
   contactSection: { paddingHorizontal: Spacing.md, gap: 12 },

@@ -18,36 +18,48 @@ const SECTIONS = [
     title: 'المعلومات التي نجمعها',
     icon: 'info',
     content:
-      'لا يجمع تطبيق جددها أي بيانات شخصية تلقائياً. عند التواصل عبر واتساب، يتم التواصل مباشرة بين المستخدم والشركة دون تخزين أي بيانات داخل التطبيق.',
+      'لا يجمع تطبيق جددها أي بيانات شخصية تعريفية تلقائياً. البيانات الوحيدة المُرسلة هي طلبات القطع التي يرسلها المستخدم بشكل اختياري (صورة، رقم قطعة، رقم هاتف اختياري) وذلك لتسهيل عملية التواصل.',
   },
   {
-    title: 'روابط الطرف الثالث',
+    title: 'الكاميرا والصور',
+    icon: 'camera-alt',
+    content:
+      'يطلب التطبيق الوصول إلى الكاميرا ومكتبة الصور فقط عند رغبة المستخدم في إرفاق صورة لطلب قطعة غيار. لا يتم الوصول إلى الكاميرا أو الصور تلقائياً في أي وقت آخر. هذه البيانات لا تُخزّن لدينا إلا بموافصرة صريحة من المستخدم.',
+  },
+  {
+    title: 'الإشعارات',
+    icon: 'notifications',
+    content:
+      'قد يطلب التطبيق إذن الإشعارات لإعلامك بالعروض الخاصة والمنتجات الجديدة. هذا الإذن اختياري تماماً ويمكنك رفضه أو تعطيله في أي وقت من إعدادات جهازك دون أن يؤثر ذلك على باقي وظائف التطبيق.',
+  },
+  {
+    title: 'روابط الطرف الثالث (واتساب)',
     icon: 'link',
     content:
-      'يحتوي التطبيق على روابط لتطبيق واتساب للتواصل المباشر. نحن غير مسؤولين عن سياسة الخصوصية الخاصة بواتساب أو أي خدمات طرف ثالث أخرى.',
+      'يحتوي التطبيق على روابط تفتح تطبيق واتساب للتواصل المباشر مع المتجر. عند الضغط على أي زر واتساب، سيتم فتح تطبيق واتساب خارج تطبيقنا. نحن غير مسؤولين عن سياسة الخصوصية الخاصة بواتساب أو أي خدمات طرف ثالث.',
   },
   {
     title: 'الاستخدام والتحليلات',
     icon: 'analytics',
     content:
-      'لا يستخدم التطبيق أي أدوات تتبع أو تحليلات. لا يتم مشاركة أي معلومات مع أطراف ثالثة لأغراض تجارية أو إعلانية.',
+      'لا يستخدم التطبيق أي أدوات تتبع أو تحليلات من طرف ثالث. لا نستخدم معرّف الإعلانات (Advertising ID) ولا نشارك أي معلومات مع أطراف ثالثة لأغراض إعلانية أو تجارية.',
   },
   {
-    title: 'الأمان',
-    icon: 'security',
+    title: 'تخزين البيانات',
+    icon: 'storage',
     content:
-      'يعمل التطبيق بالكامل على جهاز المستخدم ولا يرسل أي بيانات إلى خوادمنا. جميع التواصلات تتم عبر قنوات آمنة ومشفرة من واتساب.',
+      'يتم تخزين بيانات المنتجات والأسعار على قاعدة بيانات سحابية آمنة مشفرة (SSL/TLS). طلبات القطع التي يرسلها المستخدمون تُخزَّن في قاعدة البيانات لمعالجتها فقط ولا تُشارك مع أي جهة خارجية.',
   },
   {
     title: 'حقوق المستخدم',
     icon: 'gavel',
     content:
-      'للمستخدم الحق الكامل في التوقف عن استخدام التطبيق في أي وقت. لا يتم الاحتفاظ بأي بيانات شخصية تستوجب الحذف أو التعديل.',
+      'للمستخدم الحق الكامل في التوقف عن استخدام التطبيق في أي وقت. لحذف أي طلب قطعة أرسلته، تواصل معنا عبر واتساب أو البريد الإلكتروني وسنقوم بحذفه فوراً.',
   },
   {
     title: 'التواصل معنا',
     icon: 'contact-support',
-    content: `لأي استفسار حول سياسة الخصوصية، يمكنك التواصل معنا عبر:\nالبريد الإلكتروني: ${ContactInfo.email}\nالهاتف: ${ContactInfo.phone}`,
+    content: `لأي استفسار حول سياسة الخصوصية أو لطلب حذف بياناتك، يمكنك التواصل معنا:\nالبريد الإلكتروني: ${ContactInfo.email}\nالهاتف: ${ContactInfo.phone}`,
   },
 ];
 
@@ -68,7 +80,7 @@ export default function PrivacyScreen() {
           </TouchableOpacity>
           <View style={styles.headerTitle}>
             <Text style={styles.titleMain}>سياسة الخصوصية</Text>
-            <Text style={styles.titleSub}>آخر تحديث: يناير 2025</Text>
+            <Text style={styles.titleSub}>آخر تحديث: مايو 2025</Text>
           </View>
           <View style={styles.iconWrap}>
             <MaterialIcons name="privacy-tip" size={20} color={Colors.gold} />
@@ -85,8 +97,14 @@ export default function PrivacyScreen() {
         <View style={styles.introBanner}>
           <MaterialIcons name="shield" size={36} color={Colors.gold} />
           <Text style={styles.introText}>
-            نحن في جددها نحرص على خصوصيتك. هذه السياسة توضح كيفية تعاملنا مع معلوماتك عند استخدام تطبيقنا.
+            نحن في جددها نحرص على خصوصيتك. هذه السياسة توضح بشكل واضح كيفية تعاملنا مع معلوماتك عند استخدام تطبيقنا لقطع غيار مرسيدس أكتروس.
           </Text>
+        </View>
+
+        {/* No Ads Badge */}
+        <View style={styles.noadsBanner}>
+          <MaterialIcons name="block" size={18} color={Colors.success} />
+          <Text style={styles.noadsText}>لا إعلانات · لا تتبع · لا مشاركة بيانات مع أطراف ثالثة</Text>
         </View>
 
         {/* Sections */}
@@ -106,7 +124,7 @@ export default function PrivacyScreen() {
         <View style={styles.footerNote}>
           <MaterialIcons name="info-outline" size={16} color={Colors.textMuted} />
           <Text style={styles.footerNoteText}>
-            {AppConfig.brandName} · {ContactInfo.location}
+            {AppConfig.brandName} · {ContactInfo.location} · الإصدار 1.0.0
           </Text>
         </View>
       </ScrollView>
@@ -188,6 +206,25 @@ const styles = StyleSheet.create({
     writingDirection: 'rtl',
     lineHeight: 22,
   },
+  noadsBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(34,197,94,0.08)',
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(34,197,94,0.25)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  noadsText: {
+    fontSize: FontSize.sm,
+    color: Colors.success,
+    textAlign: 'center',
+    writingDirection: 'rtl',
+    fontWeight: FontWeight.semibold,
+  },
   section: {
     backgroundColor: Colors.darkCard,
     borderRadius: BorderRadius.xl,
@@ -237,5 +274,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     color: Colors.textMuted,
     writingDirection: 'rtl',
+    textAlign: 'center',
   },
 });
