@@ -120,7 +120,7 @@ export default function HomeScreen() {
               <MaterialIcons name="star" size={12} color={Colors.gold} />
               <Text style={styles.heroBadgeText}>متخصصون بأكتروس</Text>
             </View>
-            <Text style={styles.heroTitle}>قطع غيار أكتروس{'\n'}بدون مشاكل</Text>
+            <Text style={styles.heroTitle}>{'قطع غيار أكتروس\nيلا نجددها'}</Text>
             <Text style={styles.heroSubtitle}>MB1 · MB2 · MB3 · MB4 · MB5</Text>
             <GoldDivider width={50} centered />
             <TouchableOpacity
