@@ -577,10 +577,8 @@ export default function AdminImagesScreen() {
     uploadType: 'app' | 'category' | 'truck',
     entityId: string
   ) => {
-    if (Platform.OS !== 'web') {
-      const perm = source === 'gallery'
-        ? await ImagePicker.requestMediaLibraryPermissionsAsync()
-        : await ImagePicker.requestCameraPermissionsAsync();
+    if (source === 'camera' && Platform.OS !== 'web') {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (perm.status !== 'granted') return;
     }
 

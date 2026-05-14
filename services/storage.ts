@@ -10,12 +10,6 @@ const supabase = getSupabaseClient();
 const BUCKET = 'product-images';
 
 export async function pickAndUploadImage(): Promise<string | null> {
-  // Request permissions
-  if (Platform.OS !== 'web') {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') return null;
-  }
-
   // Pick image
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ImagePicker.MediaTypeOptions.Images,
