@@ -16,7 +16,7 @@ const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
 interface TruckCardProps {
-  truck: TruckType;
+  truck: TruckType & { imageUrl?: string | null };
   onPress: (truck: TruckType) => void;
 }
 
@@ -34,7 +34,7 @@ export function TruckCard({ truck, onPress }: TruckCardProps) {
       {/* Truck Image */}
       <View style={styles.imageContainer}>
         <Image
-          source={truck.image}
+          source={truck.imageUrl ? { uri: truck.imageUrl } : truck.image}
           style={styles.image}
           contentFit="cover"
           transition={300}

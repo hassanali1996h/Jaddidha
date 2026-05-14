@@ -98,6 +98,7 @@ export default function AdminSettingsScreen() {
   const ADMIN_MENU = [
     { label: 'المنتجات', icon: 'inventory', route: '/admin/products' },
     { label: 'الإعدادات', icon: 'settings', route: '/admin/settings', active: true },
+    { label: 'الصور', icon: 'photo-library', route: '/admin/images' },
     { label: 'طلبات القطع', icon: 'receipt-long', route: '/admin/requests' },
     { label: 'الإشعارات', icon: 'notifications', route: '/admin/notifications' },
   ];

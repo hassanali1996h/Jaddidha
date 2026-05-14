@@ -37,6 +37,7 @@ export default function RootLayout() {
             <Stack.Screen name="privacy" options={{ headerShown: false }} />
             <Stack.Screen name="about" options={{ headerShown: false }} />
             <Stack.Screen name="admin/notifications" options={{ headerShown: false }} />
+            <Stack.Screen name="admin/images" options={{ headerShown: false }} />
           </Stack>
         </SafeAreaProvider>
       </AppProvider>

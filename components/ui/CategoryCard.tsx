@@ -16,7 +16,7 @@ const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
 interface CategoryCardProps {
-  category: Category;
+  category: Category & { imageUrl?: string };
   onPress: (category: Category) => void;
 }
 
@@ -34,7 +34,7 @@ export function CategoryCard({ category, onPress }: CategoryCardProps) {
       {/* Image */}
       <View style={styles.imageContainer}>
         <Image
-          source={{ uri: category.image }}
+          source={{ uri: category.imageUrl || category.image }}
           style={styles.image}
           contentFit="cover"
           transition={200}

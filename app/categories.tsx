@@ -27,7 +27,13 @@ export default function CategoriesScreen() {
   const { truckId, truckName } = useLocalSearchParams<{ truckId: string; truckName: string }>();
 
   const truck = getTruckById(truckId);
-  const { whatsappNumber } = useApp();
+  const { whatsappNumber, categories: dbCategories } = useApp();
+
+  // Merge cloud images into local categories
+  const categories = CATEGORIES.map((cat) => {
+    const dbCat = dbCategories.find((d: any) => d.id === cat.id);
+    return { ...cat, imageUrl: dbCat?.image_url || '' };
+  });
 
   const handleCategorySelect = (category: any) => {
     router.push({

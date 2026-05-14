@@ -66,9 +66,9 @@ export default function HomeScreen() {
   const displayTrucks = truckTypes.length > 0
     ? truckTypes.map((t) => {
         const local = TRUCK_TYPES.find((lt) => lt.id === t.id);
-        return { ...t, image: local?.image };
+        return { ...local, ...t, image: local?.image, imageUrl: t.image_url || '' };
       })
-    : TRUCK_TYPES;
+    : TRUCK_TYPES.map((t) => ({ ...t, imageUrl: '' }));
 
   const handleTruckSelect = (truck: any) => {
     router.push({
