@@ -15,6 +15,7 @@
       "infoPlist": {
         "NSCameraUsageDescription": "نحتاج الكاميرا لتصوير قطع الغيار وإرسال طلبات القطع",
         "NSPhotoLibraryUsageDescription": "نحتاج الوصول للصور لرفع صور قطع الغيار",
+        "NSPhotoLibraryAddUsageDescription": "نحتاج الإذن لحفظ الصور في مكتبتك",
         "LSApplicationQueriesSchemes": ["whatsapp"],
         "NSUserNotificationsUsageDescription": "نستخدم الإشعارات لإعلامك بأحدث المنتجات والعروض الخاصة"
       }
@@ -28,10 +29,9 @@
       "versionCode": 1,
       "permissions": [
         "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
         "VIBRATE",
-        "RECEIVE_BOOT_COMPLETED"
+        "POST_NOTIFICATIONS"
       ],
       "queries": [
         { "package": "com.whatsapp" },
