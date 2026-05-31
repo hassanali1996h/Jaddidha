@@ -61,7 +61,14 @@ const TESTIMONIALS = [
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { whatsappNumber, truckTypes, loadingData, settings } = useApp();
+  const { whatsappNumber, truckTypes, loadingData, settings, hasSeenOnboarding, onboardingChecked } = useApp();
+
+  // Show onboarding automatically if it's been 7 days or first time
+  useEffect(() => {
+    if (onboardingChecked && !hasSeenOnboarding) {
+      router.replace('/onboarding');
+    }
+  }, [onboardingChecked, hasSeenOnboarding]);
 
   const displayTrucks = truckTypes.length > 0
     ? truckTypes.map((t) => {

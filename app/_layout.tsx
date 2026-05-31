@@ -4,11 +4,19 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { AppProvider } from '@/contexts/AppContext';
 import { useEffect } from 'react';
-import { requestNotificationPermission } from '@/services/notifications';
+import { requestNotificationPermission, checkAndFirePendingNotifications } from '@/services/notifications';
 
 export default function RootLayout() {
   useEffect(() => {
-    requestNotificationPermission();
+    // Request permission then check for any pending notifications from admin
+    requestNotificationPermission().then((granted) => {
+      if (granted) {
+        // Small delay to ensure app is fully loaded before firing notifications
+        setTimeout(() => {
+          checkAndFirePendingNotifications();
+        }, 3000);
+      }
+    });
   }, []);
 
   return (

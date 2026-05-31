@@ -139,6 +139,52 @@ export async function cancelAllNotifications(): Promise<void> {
 }
 
 // ============================
+// CHECK & FIRE PENDING NOTIFICATIONS ON APP OPEN
+// Called from _layout.tsx on every app launch
+// ============================
+export async function checkAndFirePendingNotifications(): Promise<void> {
+  try {
+    if (!Notifications) return;
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('is_active', true)
+      .is('sent_at', null)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (error || !data || data.length === 0) return;
+
+    for (const notif of data) {
+      try {
+        // Fire immediately as local notification
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: notif.title,
+            body: notif.body,
+            sound: 'default',
+            data: { type: notif.type || 'general', id: notif.id },
+          },
+          trigger: null,
+        });
+
+        // Mark as sent so it won't fire again
+        await supabase
+          .from('notifications')
+          .update({ sent_at: new Date().toISOString() })
+          .eq('id', notif.id);
+
+      } catch (e) {
+        console.warn('Failed to fire notification:', notif.id, e);
+      }
+    }
+  } catch (e) {
+    console.warn('checkAndFirePendingNotifications error:', e);
+  }
+}
+
+// ============================
 // DATABASE OPERATIONS
 // ============================
 export async function fetchNotifications(): Promise<NotificationRecord[]> {

@@ -1,13 +1,18 @@
 // =============================================
 // Jaddidha - App Context
-// Global state: settings, cart, data
+// Global state: settings, cart, data, onboarding
 // =============================================
 import React, { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   fetchTruckTypes, fetchCategories, fetchSettings,
   DbTruckType, DbCategory, CartItem,
 } from '@/services/db';
 import { AppConfig } from '@/constants/config';
+
+// Onboarding shows every 7 days
+const ONBOARDING_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
+const ONBOARDING_KEY = 'jaddidha_last_onboarding';
 
 interface AppContextType {
   // Settings
@@ -32,6 +37,7 @@ interface AppContextType {
 
   // Onboarding
   hasSeenOnboarding: boolean;
+  onboardingChecked: boolean;
   completeOnboarding: () => void;
 }
 
@@ -44,7 +50,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [categories, setCategories] = useState<DbCategory[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
+
+  // Onboarding state
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(true); // default true = don't show
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
 
   const refreshSettings = useCallback(async () => {
     try {
@@ -71,9 +80,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Check if onboarding should be shown (every 7 days)
+  const checkOnboarding = useCallback(async () => {
+    try {
+      const lastSeen = await AsyncStorage.getItem(ONBOARDING_KEY);
+      if (!lastSeen) {
+        // First time ever
+        setHasSeenOnboarding(false);
+      } else {
+        const lastTime = parseInt(lastSeen, 10);
+        const now = Date.now();
+        const elapsed = now - lastTime;
+        if (elapsed >= ONBOARDING_INTERVAL_MS) {
+          // Been more than 7 days
+          setHasSeenOnboarding(false);
+        } else {
+          setHasSeenOnboarding(true);
+        }
+      }
+    } catch {
+      setHasSeenOnboarding(false);
+    } finally {
+      setOnboardingChecked(true);
+    }
+  }, []);
+
   useEffect(() => {
     refreshSettings();
     refreshData();
+    checkOnboarding();
   }, []);
 
   const whatsappNumber = settings.whatsapp_number || AppConfig.whatsappNumber;
@@ -103,7 +138,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const cartCount = cart.reduce((sum, i) => sum + i.quantity, 0);
 
-  const completeOnboarding = useCallback(() => setHasSeenOnboarding(true), []);
+  const completeOnboarding = useCallback(async () => {
+    setHasSeenOnboarding(true);
+    try {
+      await AsyncStorage.setItem(ONBOARDING_KEY, Date.now().toString());
+    } catch {
+      // silent
+    }
+  }, []);
 
   return (
     <AppContext.Provider
@@ -123,6 +165,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         cartCount,
         isInCart,
         hasSeenOnboarding,
+        onboardingChecked,
         completeOnboarding,
       }}
     >
