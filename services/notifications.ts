@@ -1,8 +1,10 @@
 // =============================================
 // Jaddidha - Push Notifications Service
+// Supports: local + remote push to ALL users
 // =============================================
 import { Platform } from 'react-native';
 import { getSupabaseClient } from '@/template';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 
 const supabase = getSupabaseClient();
 
@@ -72,7 +74,85 @@ export async function requestNotificationPermission(): Promise<boolean> {
 }
 
 // ============================
-// SEND IMMEDIATE NOTIFICATION
+// GET & REGISTER PUSH TOKEN
+// Called once on app startup after permission granted
+// Stores token in DB so admin can push to all users
+// ============================
+export async function registerPushToken(): Promise<string | null> {
+  try {
+    if (!Notifications || !Device) return null;
+    if (!Device.isDevice) return null;
+
+    // Get Expo push token
+    const tokenData = await Notifications.getExpoPushTokenAsync({
+      projectId: undefined, // Uses app.json projectId automatically
+    });
+
+    const token = tokenData?.data;
+    if (!token) return null;
+
+    // Save to database (upsert on token to avoid duplicates)
+    await supabase
+      .from('push_tokens')
+      .upsert(
+        {
+          token,
+          platform: Platform.OS,
+          device_id: `${Platform.OS}_${Date.now()}`,
+          is_active: true,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'token' }
+      );
+
+    console.log('Push token registered:', token.slice(0, 20) + '...');
+    return token;
+  } catch (e) {
+    console.warn('registerPushToken error:', e);
+    return null;
+  }
+}
+
+// ============================
+// SEND TO ALL USERS (via Edge Function)
+// This is the REAL push - reaches all users instantly
+// even when the app is closed
+// ============================
+export async function sendPushToAllUsers(
+  title: string,
+  body: string,
+  data?: Record<string, any>
+): Promise<{ sent: number; failed: number; error?: string }> {
+  try {
+    const { data: result, error } = await supabase.functions.invoke('send-notifications', {
+      body: { title, body, data: data || {} },
+    });
+
+    if (error) {
+      let errorMessage = error.message;
+      if (error instanceof FunctionsHttpError) {
+        try {
+          const text = await error.context?.text();
+          errorMessage = text || errorMessage;
+        } catch {}
+      }
+      console.error('sendPushToAllUsers error:', errorMessage);
+      return { sent: 0, failed: 0, error: errorMessage };
+    }
+
+    return {
+      sent: result?.sent || 0,
+      failed: result?.failed || 0,
+    };
+  } catch (e: any) {
+    console.error('sendPushToAllUsers exception:', e);
+    return { sent: 0, failed: 0, error: e.message };
+  }
+}
+
+// ============================
+// SEND IMMEDIATE LOCAL NOTIFICATION
+// (only on THIS device - for testing)
 // ============================
 export async function sendLocalNotification(title: string, body: string): Promise<string | null> {
   try {
@@ -140,7 +220,7 @@ export async function cancelAllNotifications(): Promise<void> {
 
 // ============================
 // CHECK & FIRE PENDING NOTIFICATIONS ON APP OPEN
-// Called from _layout.tsx on every app launch
+// Fallback for users who already had notifications saved
 // ============================
 export async function checkAndFirePendingNotifications(): Promise<void> {
   try {
@@ -152,13 +232,12 @@ export async function checkAndFirePendingNotifications(): Promise<void> {
       .eq('is_active', true)
       .is('sent_at', null)
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(3);
 
     if (error || !data || data.length === 0) return;
 
     for (const notif of data) {
       try {
-        // Fire immediately as local notification
         await Notifications.scheduleNotificationAsync({
           content: {
             title: notif.title,
@@ -169,7 +248,7 @@ export async function checkAndFirePendingNotifications(): Promise<void> {
           trigger: null,
         });
 
-        // Mark as sent so it won't fire again
+        // Mark as sent
         await supabase
           .from('notifications')
           .update({ sent_at: new Date().toISOString() })

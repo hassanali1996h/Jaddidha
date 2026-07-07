@@ -485,22 +485,21 @@ export default function AdminImagesScreen() {
   // App images state
   const [appSettings, setAppSettings] = useState<Record<string, string>>({});
   const [loadingApp, setLoadingApp] = useState(true);
-  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
 
   // Categories state
   const [categories, setCategories] = useState<DbCategory[]>([]);
   const [loadingCats, setLoadingCats] = useState(true);
-  const [uploadingCatId, setUploadingCatId] = useState<string | null>(null);
   const [catUrls, setCatUrls] = useState<Record<string, string>>({});
 
   // Truck types state
   const [trucks, setTrucks] = useState<DbTruckType[]>([]);
   const [loadingTrucks, setLoadingTrucks] = useState(true);
-  const [uploadingTruckId, setUploadingTruckId] = useState<string | null>(null);
   const [truckUrls, setTruckUrls] = useState<Record<string, string>>({});
 
   // Editor state
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+  // Editor state (kept for URL entry fallback)
   const [editorVisible, setEditorVisible] = useState(false);
   const [editorImageUri, setEditorImageUri] = useState('');
   const [editorTarget, setEditorTarget] = useState<ImageTarget | null>(null);
@@ -582,79 +581,81 @@ export default function AdminImagesScreen() {
       if (perm.status !== 'granted') return;
     }
 
+    // Use the target's recommended aspect ratio for built-in cropping
+    const ratio = ASPECT_RATIOS[target.aspect];
+    const aspectArray: [number, number] = [ratio.w, ratio.h];
+
     const result = source === 'gallery'
       ? await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: false,
+          allowsEditing: true,   // Built-in crop UI
+          aspect: aspectArray,    // Correct ratio for this image type
           quality: 1,
         })
       : await ImagePicker.launchCameraAsync({
-          allowsEditing: false,
+          allowsEditing: true,
+          aspect: aspectArray,
           quality: 1,
         });
 
     if (result.canceled || !result.assets?.[0]) return;
 
-    setEditorImageUri(result.assets[0].uri);
-    setEditorTarget(target);
-    setEditorAspect(target.aspect);
-    setPendingUploadKey(entityId);
-    setPendingUploadType(uploadType);
-    setEditorVisible(true);
+    // After cropping, go directly to resize & upload (skip editor modal)
+    await processAndUpload(result.assets[0].uri, target, uploadType, entityId);
+  };
+
+  // Process (resize) and upload the already-cropped image
+  const processAndUpload = async (
+    uri: string,
+    target: ImageTarget,
+    uploadType: 'app' | 'category' | 'truck',
+    entityId: string
+  ) => {
+    try {
+      setUploadingKey(entityId);
+
+      // Resize to target dimensions
+      const manipResult = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: target.targetW, height: target.targetH } }],
+        { compress: 0.88, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      );
+
+      const base64 = manipResult.base64 || '';
+      if (!base64) throw new Error('Failed to get base64');
+
+      const publicUrl = await uploadToSupabase(base64, 'image/jpeg', target.bucket, target.prefix);
+      if (!publicUrl) throw new Error('Upload failed');
+
+      if (uploadType === 'app') {
+        setAppSettings((prev) => ({ ...prev, [entityId]: publicUrl }));
+        await updateSetting(entityId, publicUrl);
+        await refreshSettings();
+      } else if (uploadType === 'category') {
+        setCatUrls((prev) => ({ ...prev, [entityId]: publicUrl }));
+        const cat = categories.find((c) => c.id === entityId);
+        if (cat) await upsertCategory({ ...cat, image_url: publicUrl });
+      } else if (uploadType === 'truck') {
+        setTruckUrls((prev) => ({ ...prev, [entityId]: publicUrl }));
+        const truck = trucks.find((t) => t.id === entityId);
+        if (truck) await upsertTruckType({ ...truck, image_url: publicUrl });
+      }
+
+      showAlert('✅ تم الرفع', 'تم تحديث الصورة وستظهر لجميع المستخدمين فوراً');
+    } catch (e) {
+      console.error('processAndUpload error:', e);
+      showAlert('خطأ', 'حصل مشكلة أثناء رفع الصورة، جرب مرة ثانية');
+    } finally {
+      setUploadingKey(null);
+    }
   };
 
   // =============================================
   // AFTER EDITOR CONFIRM
   // =============================================
+  // Keep handleEditorConfirm for URL-based approach (not used with new gallery flow)
   const handleEditorConfirm = async (processedUri: string, base64: string) => {
-    if (!editorTarget) return;
-    setProcessingEditor(true);
-
-    try {
-      let uploadBase64 = base64;
-      let mimeType = 'image/jpeg';
-
-      // If no base64 (fallback), pick from uri
-      if (!uploadBase64) {
-        const manipResult = await ImageManipulator.manipulateAsync(
-          processedUri,
-          [],
-          { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG, base64: true }
-        );
-        uploadBase64 = manipResult.base64 || '';
-      }
-
-      const publicUrl = await uploadToSupabase(
-        uploadBase64, mimeType,
-        editorTarget.bucket, editorTarget.prefix
-      );
-
-      if (!publicUrl) throw new Error('Upload failed');
-
-      setEditorVisible(false);
-
-      if (pendingUploadType === 'app') {
-        setAppSettings((prev) => ({ ...prev, [pendingUploadKey]: publicUrl }));
-        await updateSetting(pendingUploadKey, publicUrl);
-        await refreshSettings();
-        showAlert('تم الرفع', 'تم تحديث الصورة بنجاح وستظهر لجميع المستخدمين');
-      } else if (pendingUploadType === 'category') {
-        setCatUrls((prev) => ({ ...prev, [pendingUploadKey]: publicUrl }));
-        const cat = categories.find((c) => c.id === pendingUploadKey);
-        if (cat) await upsertCategory({ ...cat, image_url: publicUrl });
-        showAlert('تم الرفع', 'تم تحديث صورة الفئة بنجاح');
-      } else if (pendingUploadType === 'truck') {
-        setTruckUrls((prev) => ({ ...prev, [pendingUploadKey]: publicUrl }));
-        const truck = trucks.find((t) => t.id === pendingUploadKey);
-        if (truck) await upsertTruckType({ ...truck, image_url: publicUrl });
-        showAlert('تم الرفع', 'تم تحديث صورة الشاحنة بنجاح');
-      }
-    } catch (e) {
-      console.error(e);
-      showAlert('خطأ', 'حصل مشكلة أثناء رفع الصورة');
-    } finally {
-      setProcessingEditor(false);
-    }
+    setEditorVisible(false);
   };
 
   // =============================================
@@ -786,7 +787,7 @@ export default function AdminImagesScreen() {
               <ImageCard
                 key={target.key}
                 label={target.label}
-                hint={target.hint}
+                hint={`${target.hint} (${ASPECT_RATIOS[target.aspect].label})`}
                 icon={target.icon}
                 currentUrl={appSettings[target.key] || ''}
                 aspectRatio={target.aspect}
@@ -833,11 +834,11 @@ export default function AdminImagesScreen() {
                   </View>
                   <ImageCard
                     label={`صورة ${cat.name}`}
-                    hint="تظهر في قائمة الفئات - نسبة 4:3 مثالية"
+                    hint="تظهر في قائمة الفئات · سيتم الاقتصاص تلقائياً بنسبة 4:3"
                     icon="photo"
                     currentUrl={catUrls[cat.id] || ''}
                     aspectRatio="4:3"
-                    loading={uploadingCatId === cat.id}
+                    loading={uploadingKey === cat.id}
                     savingUrl={savingKey === cat.id}
                     onPickGallery={() => pickImageForTarget(catTarget, 'gallery', 'category', cat.id)}
                     onPickCamera={() => pickImageForTarget(catTarget, 'camera', 'category', cat.id)}
@@ -911,11 +912,11 @@ export default function AdminImagesScreen() {
 
                   <ImageCard
                     label={`صورة ${truck.name}`}
-                    hint="تظهر في بطاقة الشاحنة - نسبة 16:9 مثالية"
+                    hint="تظهر في بطاقة الشاحنة · سيتم الاقتصاص تلقائياً بنسبة 16:9"
                     icon="photo"
                     currentUrl={currentUrl}
                     aspectRatio="16:9"
-                    loading={uploadingTruckId === truck.id}
+                    loading={uploadingKey === truck.id}
                     savingUrl={savingKey === truck.id}
                     onPickGallery={() => pickImageForTarget(truckTarget, 'gallery', 'truck', truck.id)}
                     onPickCamera={() => pickImageForTarget(truckTarget, 'camera', 'truck', truck.id)}
@@ -933,19 +934,7 @@ export default function AdminImagesScreen() {
         )
       )}
 
-      {/* Image Editor Modal */}
-      {editorTarget && (
-        <ImageEditorModal
-          visible={editorVisible}
-          imageUri={editorImageUri}
-          target={editorTarget}
-          selectedAspect={editorAspect}
-          onAspectChange={setEditorAspect}
-          onConfirm={handleEditorConfirm}
-          onCancel={() => setEditorVisible(false)}
-          processing={processingEditor}
-        />
-      )}
+
     </View>
   );
 }

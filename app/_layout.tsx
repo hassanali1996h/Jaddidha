@@ -4,13 +4,15 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { AppProvider } from '@/contexts/AppContext';
 import { useEffect } from 'react';
-import { requestNotificationPermission, checkAndFirePendingNotifications } from '@/services/notifications';
+import { requestNotificationPermission, checkAndFirePendingNotifications, registerPushToken } from '@/services/notifications';
 
 export default function RootLayout() {
   useEffect(() => {
     // Request permission then check for any pending notifications from admin
     requestNotificationPermission().then((granted) => {
       if (granted) {
+        // Register this device's push token so admin can reach ALL users
+        registerPushToken();
         // Small delay to ensure app is fully loaded before firing notifications
         setTimeout(() => {
           checkAndFirePendingNotifications();

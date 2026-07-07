@@ -26,6 +26,7 @@ import {
   deleteNotification,
   sendLocalNotification,
   scheduleNotification,
+  sendPushToAllUsers,
   requestNotificationPermission,
   NotificationRecord,
 } from '@/services/notifications';
@@ -93,23 +94,32 @@ export default function AdminNotificationsScreen() {
       showAlert('بيانات ناقصة', 'العنوان والنص مطلوبان');
       return;
     }
-    if (!hasPermission) {
-      showAlert('الإشعارات غير مفعّلة', 'فعّل الإشعارات أولاً');
-      return;
-    }
 
     setSending('sending');
     try {
       const scheduleMinutes = parseInt(form.scheduleMinutes || '0');
       let scheduleAt: string | null = null;
-      let notifId: string | null = null;
 
       if (scheduleMinutes > 0) {
+        // Scheduled: save to DB only, will fire when users open app
         const schedDate = new Date(Date.now() + scheduleMinutes * 60 * 1000);
         scheduleAt = schedDate.toISOString();
-        notifId = await scheduleNotification(form.title, form.body, schedDate);
+        if (hasPermission) {
+          await scheduleNotification(form.title, form.body, schedDate);
+        }
       } else {
-        notifId = await sendLocalNotification(form.title, form.body);
+        // IMMEDIATE: Send to ALL registered devices via Edge Function (real push)
+        const result = await sendPushToAllUsers(
+          form.title,
+          form.body,
+          { type: form.type }
+        );
+        console.log(`Push sent: ${result.sent} devices, failed: ${result.failed}`);
+
+        // Also fire locally on admin device
+        if (hasPermission) {
+          await sendLocalNotification(form.title, form.body);
+        }
       }
 
       // Save to DB
@@ -127,10 +137,10 @@ export default function AdminNotificationsScreen() {
       setForm({ title: '', body: '', type: 'general', scheduleMinutes: '' });
 
       showAlert(
-        scheduleMinutes > 0 ? 'تمت الجدولة' : 'تم الإرسال',
+        scheduleMinutes > 0 ? 'تمت الجدولة' : '✅ تم الإرسال للجميع',
         scheduleMinutes > 0
-          ? `سيصل الإشعار بعد ${scheduleMinutes} دقيقة`
-          : 'تم إرسال الإشعار الآن'
+          ? `سيصل الإشعار بعد ${scheduleMinutes} دقيقة عند فتح التطبيق`
+          : 'تم إرسال الإشعار لجميع المستخدمين الذين فعّلوا الإشعارات'
       );
     } catch (e) {
       showAlert('خطأ', 'حصل مشكلة أثناء الإرسال');
