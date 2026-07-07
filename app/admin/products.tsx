@@ -151,6 +151,7 @@ export default function AdminProductsScreen() {
     { label: 'الصور', icon: 'photo-library', route: '/admin/images' },
     { label: 'طلبات القطع', icon: 'receipt-long', route: '/admin/requests' },
     { label: 'الإشعارات', icon: 'notifications', route: '/admin/notifications' },
+    { label: 'استيراد Excel', icon: 'upload-file', route: '/admin/import' },
   ];
 
   const renderProduct = ({ item }: { item: DbProduct }) => (
