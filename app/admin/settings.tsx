@@ -116,7 +116,7 @@ export default function AdminSettingsScreen() {
         </View>
 
         {/* Nav tabs */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.navTabs}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.navTabs} keyboardShouldPersistTaps="handled">
           {ADMIN_MENU.map((m) => (
             <TouchableOpacity
               key={m.route}
@@ -156,6 +156,9 @@ export default function AdminSettingsScreen() {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
+          keyboardShouldPersistTaps="handled"
+          scrollEnabled={true}
+          nestedScrollEnabled={true}
         >
           {/* ===================== CONTACT SETTINGS ===================== */}
           {activeTab === 'contact' ? (

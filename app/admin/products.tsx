@@ -190,7 +190,7 @@ export default function AdminProductsScreen() {
     <View style={styles.root}>
       {/* Header */}
       <LinearGradient colors={['#000', '#0A0A0A']} style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <View style={styles.headerInner}>
+        <View style={styles.headerInner} pointerEvents="box-none">
           <TouchableOpacity style={styles.backBtn} onPress={() => router.push('/admin')}>
             <MaterialIcons name="arrow-forward-ios" size={20} color={Colors.gold} />
           </TouchableOpacity>
@@ -201,7 +201,7 @@ export default function AdminProductsScreen() {
         </View>
 
         {/* Nav tabs */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.navTabs}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.navTabs} keyboardShouldPersistTaps="handled">
           {ADMIN_MENU.map((m) => (
             <TouchableOpacity key={m.route} style={[styles.navTab, m.active && styles.navTabActive]} onPress={() => router.push(m.route as any)}>
               <MaterialIcons name={m.icon as any} size={16} color={m.active ? '#000' : Colors.textSecondary} />
@@ -240,6 +240,9 @@ export default function AdminProductsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 80 }]}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          scrollEnabled={true}
+          nestedScrollEnabled={true}
         />
       )}
 
@@ -256,7 +259,12 @@ export default function AdminProductsScreen() {
             </TouchableOpacity>
           </LinearGradient>
 
-          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.modalContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled={true}
+          >
             {/* Image Upload Section */}
             <View style={styles.formField}>
               <Text style={styles.formLabel}>صورة المنتج</Text>
