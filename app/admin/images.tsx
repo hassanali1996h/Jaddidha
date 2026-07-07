@@ -63,22 +63,27 @@ const ASPECT_RATIOS: Record<AspectRatio, { label: string; w: number; h: number }
   '2:1': { label: '2:1 - بانر واسع', w: 2, h: 1 },
 };
 
+// Hero aspect: screen is ~375×812 on iPhone, hero = full width × 65% height
+// = 375×528 ≈ 9:13 portrait → closest standard is 3:4 (0.75) or 2:3 (0.67)
+// TruckCard image: CARD_WIDTH×140 = ~163×140 ≈ 7:6 → closest is 4:3 landscape flipped → use 1:1
+// CategoryCard image: CARD_WIDTH×130 = ~163×130 ≈ 5:4 → use 1:1
+
 const APP_IMAGE_TARGETS: ImageTarget[] = [
   {
     key: 'hero_image',
     label: 'صورة الواجهة الرئيسية',
-    hint: 'تظهر كخلفية كبيرة في الصفحة الرئيسية - ننصح بنسبة 16:9',
+    hint: 'تمتد من أعلى الشاشة لأسفل - يجب أن تكون عمودية (3:4) ليتطابق مع الشاشة',
     icon: 'panorama',
-    aspect: '16:9',
+    aspect: '3:4',
     bucket: 'app-images',
     prefix: 'hero',
-    targetW: 1280,
-    targetH: 720,
+    targetW: 900,
+    targetH: 1200,
   },
   {
     key: 'logo_image',
     label: 'شعار التطبيق (اللوغو)',
-    hint: 'يظهر في الهيدر والأيقونة - ننصح بمربع 1:1',
+    hint: 'يظهر في الهيدر - يجب أن يكون مربعاً 1:1',
     icon: 'image',
     aspect: '1:1',
     bucket: 'app-images',
@@ -89,13 +94,13 @@ const APP_IMAGE_TARGETS: ImageTarget[] = [
   {
     key: 'about_image',
     label: 'صورة صفحة "عن التطبيق"',
-    hint: 'تظهر في صفحة التعريف بالمتجر - ننصح بنسبة 4:3',
+    hint: 'تظهر أفقياً في صفحة التعريف - نسبة 16:9 مناسبة',
     icon: 'business',
-    aspect: '4:3',
+    aspect: '16:9',
     bucket: 'app-images',
     prefix: 'about',
-    targetW: 800,
-    targetH: 600,
+    targetW: 1280,
+    targetH: 720,
   },
 ];
 
@@ -817,11 +822,12 @@ export default function AdminImagesScreen() {
               <Text style={styles.tabHeaderText}>{categories.length} فئة · قابلة للتحرير</Text>
             </View>
             {categories.map((cat) => {
+              // CategoryCard image: CARD_WIDTH×130px ≈ 163×130 → closest = 5:4 or 1:1
               const catTarget: ImageTarget = {
                 key: cat.id, label: cat.name, hint: `صورة فئة ${cat.name}`,
                 icon: cat.icon || 'category', aspect: '4:3',
                 bucket: 'product-images', prefix: `cat_${cat.id}`,
-                targetW: 800, targetH: 600,
+                targetW: 520, targetH: 390,
               };
               return (
                 <View key={cat.id} style={styles.entityCard}>
@@ -834,7 +840,7 @@ export default function AdminImagesScreen() {
                   </View>
                   <ImageCard
                     label={`صورة ${cat.name}`}
-                    hint="تظهر في قائمة الفئات · سيتم الاقتصاص تلقائياً بنسبة 4:3"
+                    hint="تظهر في بطاقة الفئة (163×130 بكسل) · نسبة 4:3 مناسبة"
                     icon="photo"
                     currentUrl={catUrls[cat.id] || ''}
                     aspectRatio="4:3"
@@ -871,16 +877,17 @@ export default function AdminImagesScreen() {
             <View style={styles.noteCard}>
               <MaterialIcons name="info-outline" size={14} color={Colors.orange} />
               <Text style={styles.noteText}>
-                صور الشاحنات تظهر في الصفحة الرئيسية عند اختيار موديل الأكتروس - ننصح بنسبة 16:9
+                صور الشاحنات تظهر في بطاقة 163×140 بكسل — نسبة 4:3 تعطي أفضل نتيجة بدون قطع
               </Text>
             </View>
             {trucks.map((truck) => {
               const localTruck = TRUCK_TYPES.find((t) => t.id === truck.id);
+              // TruckCard image: CARD_WIDTH×140px ≈ 163×140 → ratio ~7:6 → use 1:1 for best fit
               const truckTarget: ImageTarget = {
                 key: truck.id, label: truck.name, hint: `صورة ${truck.name}`,
-                icon: 'local-shipping', aspect: '16:9',
+                icon: 'local-shipping', aspect: '4:3',
                 bucket: 'product-images', prefix: `truck_${truck.id}`,
-                targetW: 1280, targetH: 720,
+                targetW: 640, targetH: 480,
               };
               const currentUrl = truckUrls[truck.id] || '';
               return (
@@ -912,7 +919,7 @@ export default function AdminImagesScreen() {
 
                   <ImageCard
                     label={`صورة ${truck.name}`}
-                    hint="تظهر في بطاقة الشاحنة · سيتم الاقتصاص تلقائياً بنسبة 16:9"
+                    hint="تظهر في بطاقة الشاحنة (163×140 بكسل) · نسبة 4:3 مناسبة"
                     icon="photo"
                     currentUrl={currentUrl}
                     aspectRatio="16:9"
